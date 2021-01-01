@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
+  <script src="https://aframe.io/releases/1.1.0/aframe.min.js"></script>
+  <script>
+    let current_position = {};
+    let current_rotation = {};
+    let name = '';
+    AFRAME.registerComponent('rotation-reader', {
+      tick: (function() {
+        return function() {
+          current_position = this.el.object3D.position;
+          current_rotation = this.el.object3D.rotation;
+        };
+      })()
+    });
+  </script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" href="default.css">
+  <title>Room VR</title>
+</head>
+
+<body>
+
+  <div id="full-container">
+    <div>
+      <input type="text" class="form-control" pattern="^[0-9A-Za-z]+$" placeholder="名前を入力してください(半角英数のみ)" id="js-name">
+      <button id="js-join-trigger" type="button" class="btn btn-primary">部屋に参加する</button>
+    </div>
+  </div>
+  <div id="admin-container">
+    <select id="js-scene-selector" class="form-control">
+            <option value="1">Scene 1</option>
+            <option value="2">Scene 2</option>
+          </select>
+    <button id="js-send-trigger" type="button" class="btn btn-outline-primary">シーン変更</button>
+    <pre class="messages" id="js-messages"></pre>
+  </div>
+
+  <a-scene>
+
+    <a-entity id="scene1" class="scenes" visible="false">
+      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
+      <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
+      <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
+      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+    </a-entity>
+
+    <a-entity id="scene2" class="scenes" visible="false">
+      <a-box position="1 0.5 -3" rotation="0 45 0" color="#ffff00"></a-box>
+      <a-sphere position="0 1.25 5" radius="1.25" color="#ff0000"></a-sphere>
+      <a-cylinder position="-1 0.75 -3" radius="0.5" height="1.5" color="#00ff00"></a-cylinder>
+      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+    </a-entity>
+
+    <a-sky color="#ECECEC"></a-sky>
+    <a-camera look-controls wasd-controls position="0 1.6 0" rotation-reader></a-camera>
+  </a-scene>
+
+  <script>
+    // import
+    (async function main() {
+      const joinTrigger = document.getElementById('js-join-trigger');
+      const sendTrigger = document.getElementById('js-send-trigger');
+      const selector = document.getElementById('js-scene-selector');
+      const messages = document.getElementById('js-messages');
+      const sdkSrc = document.querySelector('script[src*=skyway]');
+      const nameField = document.getElementById('js-name');
+      const adminContainer = document.getElementById('admin-container');
+
+      const peer = (window.peer = new Peer({
+        key: '93bd3d91-e8f4-44a5-b9e8-326e39597b07',
+        debug: 3,
+      }));
+
+      // Register connecter handler
+      joinTrigger.addEventListener('click', () => {
+        // Note that you need to ensure the peer has connected to signaling server
+        // before using methods of peer instance.
+        if (!peer.open) {
+          return;
+        }
+
+        const fullContainer = document.getElementById('full-container');
+        fullContainer.remove();
+
+        name = nameField.value ? nameField.value : 'no name';
+
+        const params = getUrlParams();
+
+        if (params.admin) {
+          adminContainer.style.display = 'block';
+        }
+
+        const room = peer.joinRoom(params["room"], {
+          mode: 'mesh'
+        });
+
+        room.once('open', () => {
+          messages.textContent += '=== あなたが参加しました ===\n';
+          changeScene({
+            scene: 1
+          });
+        });
+        room.on('peerJoin', peerId => {
+          messages.textContent += `=== ${peerId} が参加しました ===\n`;
+        });
+
+        room.on('data', ({
+          data,
+          src
+        }) => {
+          if (data.position) {
+            createOrSetPosition(src, data);
+          } else if (data.scene) {
+            changeScene(data);
+          } else {
+            messages.textContent += `${src}: ${data}\n`;
+          }
+        });
+
+        // for closing myself
+        room.once('close', () => {
+          sendTrigger.removeEventListener('click', onClickSend);
+          messages.textContent += '== You left ===\n';
+        });
+
+
+        sendTrigger.addEventListener('click', onClickSend);
+
+        function onClickSend() {
+          const val = selector.value;
+          room.send({
+            scene: val
+          });
+          changeScene({
+            scene: val
+          });
+
+          messages.textContent += `シーン変更 :${val}\n`;
+        }
+
+        const sendPosition = () => {
+          room.send({
+            position: current_position,
+            rotation: current_rotation,
+            name: name,
+          });
+        }
+        setInterval(sendPosition, 100); // 10fps
+      });
+
+      peer.on('error', console.error);
+    })();
+
+    function getUrlParams() {
+      let vars = [],
+        hash;
+      const hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+      for (let i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+      }
+      return vars;
+    }
+
+    function createOrSetPosition(src, {
+      position,
+      rotation,
+      name
+    }) {
+      let otherObj = document.getElementById(src);
+
+      if (!otherObj) {
+        otherObj = document.createElement("a-entity");
+        otherObj.setAttribute('id', src);
+        otherObj.setAttribute('class', 'otherObj');
+        const scene = document.querySelector('a-scene');
+        scene.appendChild(otherObj);
+
+        const sphereObj = document.createElement("a-sphere");
+        sphereObj.object3D.scale.set(0.3, 0.3, 0.3);
+        sphereObj.setAttribute("color", "#000")
+        const coneObj = document.createElement("a-cone");
+        coneObj.object3D.rotation.set(Math.PI / -2, 0, 0);
+        coneObj.object3D.position.set(0, 0, -0.3);
+        coneObj.object3D.scale.set(0.2, 0.2, 0.2);
+        const textObj = document.createElement("a-text");
+        textObj.setAttribute("value", name);
+        textObj.setAttribute("color", "#000");
+        textObj.object3D.rotation.set(0, Math.PI, 0);
+        textObj.object3D.position.set(0.3, 0.5, 0);
+        otherObj.appendChild(sphereObj);
+        otherObj.appendChild(coneObj);
+        otherObj.appendChild(textObj);
+      }
+      otherObj.object3D.position.set(position.x, position.y, position.z + 0.5); // 初期位置かぶり防ぐためz軸少しずらす
+      otherObj.object3D.rotation.set(rotation._x, rotation._y, rotation._z);
+    }
+
+    function changeScene({
+      scene
+    }) {
+      const scenes = document.getElementsByClassName("scenes");
+      for (i = 0; i < scenes.length; i++) {
+        scenes[i].setAttribute("visible", false);
+      }
+
+      const sceneObj = document.getElementById(`scene${scene}`);
+      sceneObj.setAttribute("visible", true);
+
+      const selector = document.getElementById('js-scene-selector');
+      selector.value = scene;
+    }
+  </script>
+</body>
+
+</html>
