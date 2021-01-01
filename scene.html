@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.webrtc.ecl.ntt.com/skyway-latest.js"></script>
   <script src="https://aframe.io/releases/1.1.0/aframe.min.js"></script>
+  <script src="https://rawgit.com/fernandojsg/aframe-teleport-controls/master/dist/aframe-teleport-controls.min.js"></script>
   <script>
     let current_position = {};
     let current_rotation = {};
@@ -58,7 +59,11 @@
     </a-entity>
 
     <a-sky color="#ECECEC"></a-sky>
-    <a-camera look-controls wasd-controls position="0 1.6 0" rotation-reader></a-camera>
+    <a-entity id="cameraRig">
+      <a-entity id="head" camera wasd-controls look-controls position="0 1.6 0" rotation-reader></a-entity>
+      <a-entity id="left-hand" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head; button: trigger;"></a-entity>
+      <a-entity id="right-hand" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head; button: trigger;"></a-entity>
+    </a-entity>
   </a-scene>
 
   <script>
