@@ -38,24 +38,55 @@
             <option value="1">Scene 1</option>
             <option value="2">Scene 2</option>
           </select>
-    <button id="js-send-trigger" type="button" class="btn btn-outline-primary">シーン変更</button>
+    <button id="js-send-trigger" type="button" class="btn btn-outline-primary mt-2">シーン変更</button>
     <pre class="messages" id="js-messages"></pre>
   </div>
 
   <a-scene>
+    <a-assets>
+      <img id="floor1" src="./img/floor1.jpg">
+      <img id="floor2" src="./img/floor2.jpg">
+      <img id="wall1" src="./img/wall1.jpg">
+      <img id="wall2" src="./img/wall2.jpg">
+      <a-asset-item id="table1" src="./models/table1.gltf"></a-asset-item>
+      <a-asset-item id="table2" src="./models/table2.gltf"></a-asset-item>
+      <a-asset-item id="table3" src="./models/table3.gltf"></a-asset-item>
+      <a-asset-item id="bed1" src="./models/bed1.gltf"></a-asset-item>
+      <a-asset-item id="chair1" src="./models/chair1.gltf"></a-asset-item>
+      <a-asset-item id="chair2" src="./models/chair2.gltf"></a-asset-item>
+      <a-asset-item id="kitchen" src="./models/kitchen.gltf"></a-asset-item>
+      <a-asset-item id="armoire-obj" src="./models/armoire.obj"></a-asset-item>
+      <a-asset-item id="armoire-mtl" src="./models/armoire.mtl"></a-asset-item>
+    </a-assets>
 
     <a-entity id="scene1" class="scenes" visible="false">
-      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
-      <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
-      <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      <a-entity gltf-model="#table1" position="1.5 0 -1.3"></a-entity>
+      <a-entity gltf-model="#table2" position="-1.2 0 1.0"></a-entity>
+      <a-entity gltf-model="#bed1" position="-1.1 0 -1.1" rotation="0 90 0"></a-entity>
+      <a-entity gltf-model="#chair1" position="-1.2 0 0.6"></a-entity>
+      <a-entity gltf-model="#chair1" position="-1.2 0 1.5" rotation="-180 0 -180"></a-entity>
+
+      <a-plane position="0 0 -2.5" rotation="0 0 0" src="#wall1" scale="5 5" repeat="10 10"></a-plane>
+      <a-plane position="0 0 2.5" rotation="-180 0 0" src="#wall1" scale="5 5" repeat="10 10"></a-plane>
+      <a-plane position="-2.5 0 0" rotation="0 90 0" src="#wall1" scale="5 5" repeat="10 10"></a-plane>
+      <a-plane position="2.5 0 0" rotation="0 -90 0" src="#wall1" scale="5 5" repeat="10 10"></a-plane>
+      <a-plane position="0 0 0" rotation="-90 0 0" src="#floor1" scale="5 5" repeat="10 10"></a-plane>
+      <a-plane position="0 2.5 0" rotation="90 0 0" src="#wall1" scale="5 5" repeat="10 10"></a-plane>
     </a-entity>
 
     <a-entity id="scene2" class="scenes" visible="false">
-      <a-box position="1 0.5 -3" rotation="0 45 0" color="#ffff00"></a-box>
-      <a-sphere position="0 1.25 5" radius="1.25" color="#ff0000"></a-sphere>
-      <a-cylinder position="-1 0.75 -3" radius="0.5" height="1.5" color="#00ff00"></a-cylinder>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      <a-plane position="0 0 -3" rotation="0 0 0" src="#wall2" scale="10 10" repeat="20 20"></a-plane>
+      <a-plane position="0 0 3" rotation="-180 0 0" src="#wall2" scale="10 10" repeat="20 20"></a-plane>
+      <a-plane position="-3 0 0" rotation="0 90 0" src="#wall2" scale="10 10" repeat="20 20"></a-plane>
+      <a-plane position="3 0 0" rotation="0 -90 0" src="#wall2" scale="10 10" repeat="20 20"></a-plane>
+      <a-plane position="0 0 0" rotation="-90 0 0" src="#floor2" scale="10 10" repeat="20 20"></a-plane>
+      <a-plane position="0 2.3 0" rotation="90 0 0" src="#wall2" scale="10 10" repeat="20 20"></a-plane>
+
+      <a-entity gltf-model="#kitchen" position="-0.6 0 -1.4" rotation="0 180 0"></a-entity>
+      <a-entity gltf-model="#table3" position="1.3 0 1.4"></a-entity>
+      <a-entity gltf-model="#chair2" position="1.3 0 1.0"></a-entity>
+      <a-entity gltf-model="#chair2" position="1.3 0 1.8" rotation="0 180 0"></a-entity>
+      <a-obj-model position="2 0.95 -2.5" scale="0.7 0.7 0.7" src="#armoire-obj" mtl="#armoire-mtl"></a-obj-model>
     </a-entity>
 
     <a-sky color="#ECECEC"></a-sky>
@@ -191,18 +222,25 @@
         const sphereObj = document.createElement("a-sphere");
         sphereObj.object3D.scale.set(0.3, 0.3, 0.3);
         sphereObj.setAttribute("color", "#000")
+
         const coneObj = document.createElement("a-cone");
         coneObj.object3D.rotation.set(Math.PI / -2, 0, 0);
         coneObj.object3D.position.set(0, 0, -0.3);
         coneObj.object3D.scale.set(0.2, 0.2, 0.2);
+
         const textObj = document.createElement("a-text");
         textObj.setAttribute("value", name);
         textObj.setAttribute("color", "#000");
         textObj.object3D.rotation.set(0, Math.PI, 0);
         textObj.object3D.position.set(0.3, 0.5, 0);
+
+        const lineObj = document.createElement("a-entity");
+        lineObj.setAttribute("line", "start: 0, 0, 0; end: 0, 10, 0; color: red");
+        lineObj.object3D.rotation.set(Math.PI / -2, 0, 0);
         otherObj.appendChild(sphereObj);
         otherObj.appendChild(coneObj);
         otherObj.appendChild(textObj);
+        otherObj.appendChild(lineObj);
       }
       otherObj.object3D.position.set(position.x, position.y, position.z + 0.5); // 初期位置かぶり防ぐためz軸少しずらす
       otherObj.object3D.rotation.set(rotation._x, rotation._y, rotation._z);
